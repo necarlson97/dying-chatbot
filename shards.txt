@@ -1,0 +1,14 @@
+ps = nltk.stem.PorterStemmer()
+
+tokens = nltk.word_tokenize(input)
+tokens = [ ps.stem(token) for token in tokens ]
+tags = nltk.pos_tag(tokens)
+
+
+print('\t', tags)
+for word, tag in tags:
+  if word == 'it' or word == 'are': continue
+  if tag.startswith('NN') or tag.startswith('PR'):
+    sub = word
+  if tag.startswith('VB') or tag.startswith('W'):
+    act = word

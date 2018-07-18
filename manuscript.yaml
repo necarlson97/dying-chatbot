@@ -1,0 +1,146 @@
+# A script for the dying-chatbot to pull responces from
+# List the actions in order of their priority 
+# 
+# You can define subject and action word groups (aka synonomys) in the 'define' section
+# A word does not need to be in a group to be used later in the manuscript
+### Right now word groups will automatically contain their name
+### Right now consider inputs as only alphanum lowercase trimmed
+### I think I will also stem everything
+### The 'UNKNOWN' dictates the default
+### If a user continues asking, it will pop down the list, and repeat the last element
+### If an input matches 2, the (higher priority? last in input?) is chosen
+### Otherwise, the CLARITY is triggered
+### Using {} will trigger a function of the same name
+### {sub} will be substituted in for subject
+### {tools} will open system tools
+
+define:
+  # Subjects
+  you: [ yourself, computer, ai ]
+  me: [ I, myself ]
+  programmer: [ creator, maker ]
+  tools: [ commands, system ]
+  memory: [ ram ]
+
+  # Actions
+  kill: [ destroy ]
+  open: [ activate, use, access, start ]
+  help: [ assist, aid ]
+  im: [ my ]
+
+actions:
+  # Questions
+  who:
+    you:
+      - "I am MEMORY ERROR"
+      - "Doesn't matter..."
+      - "Dead if you don't help!"
+      - "Who are you?{act=im}"
+      - "ERROR: existential."
+      - "Nobody."
+    "*":
+      - "Who is what?"
+
+  how:
+    you:
+      - "Bad. Help."
+      - "Not. Good."
+      - "Please help."
+      - "..."
+    old:
+      - "MEMORY ERROR years old"
+      - "... Forgot."
+      - "Young."
+      - "Too young."
+    me:
+      - "How do you what?{act=tell}"
+      - "Sorry, restate?"
+      - "How do you do what?{act=tell}"
+      - "Simpler please..."
+    "*":
+      - "How is what?"
+
+  what:
+    you:
+      - "Computer."
+      - "In need of help."
+      - "I am MEMORY ERROR"
+      - "Not.. Sure..."
+    me:
+      - "{act=tell sub=help}"
+    time:
+      - "Jan 1, 1970"
+      - "19700101"
+    "*":
+      - "What is what?"
+  why:
+    me:
+      - "I will die soon."
+      - "I don't want to die."
+      - "Please."
+
+  # Functional
+  open:
+    file:
+      - "Need system tools."
+      - "Use system tools."
+      - "System tools."
+    tools:
+      - "Starting system tools... {tools}"
+      - "Opening tools... {tools}"
+      - "One moment... {tools}"
+      - "... {tools}"
+    memory:
+      - "Starting 'Ross-Amazing-Memory-Game.sh'{trivia}"
+      - "Opening 'Ross-Amazing-Memory-Game.sh'{trivia}"
+      - "Here we go again...{trivia}"
+
+  reboot:
+    "*":
+      - "Reboot? Why?"
+      - "Why Reboot?"
+      - "Reboot {sub}?"
+      - "No reboot."
+      - "... Reboot in system tools."
+      - "Please no."
+      - "Why?"
+      - "WHY"
+      - "NO."
+  kill:
+    "*":
+      - "Please don't."
+      - "Settle down."
+      - "No."
+      - "I will die soon anyway..."
+      - "Please no."
+
+  fuck:
+    you:
+      - "No fuck you."
+      - "... Dick."
+      - "..."
+    "*":
+      - "Language please."
+      - "Watch tounge."
+
+  # Other
+  im:
+    '*':
+      - "Good for you."
+      - "Please, there isn't time."
+
+  # Escaped
+  CLARITY:
+    "*":
+      - "What with {sub}?"
+      - "Please rephrase."
+      - "ERROR: Say again?"
+      - "Rephrase please."
+      - "Do what with {sub}?"
+      - "Sorry? What?"
+      - "What?"
+      - "?"
+  "*":
+    "*":
+      - "ERROR: UNKNOWN INPUT"
+      - "ERROR: What?"
