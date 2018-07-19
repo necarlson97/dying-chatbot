@@ -12,3 +12,39 @@ for word, tag in tags:
     sub = word
   if tag.startswith('VB') or tag.startswith('W'):
     act = word
+
+    def create():
+  eng = Engine(stdscr)
+
+  thr = threading.Thread(target=eng.run)
+  thr.daemon = True
+  thr.start()
+
+  return eng
+
+  if __name__ == '__main__':
+
+  import time
+
+import input_recog
+import text_mode
+
+eng = text_mode.start()
+
+while eng.running:
+  time.sleep(1)
+def create(stdscr):
+  return Engine(stdscr)
+  
+def start():
+  eng = curses.wrapper(create)
+
+  thr = threading.Thread(target=eng.run)
+  thr.daemon = True
+  thr.start()
+
+  return eng
+
+if __name__ == '__main__':
+  eng = curses.wrapper(create)
+  eng.run()
