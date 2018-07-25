@@ -27,6 +27,8 @@ define:
   open: [ activate, use, access, start ]
   help: [ assist, aid ]
   im: [ my ]
+  agree: [ yes, ok, affirm, mmk ]
+  hello: [ hey, hi, greetings]
 
 actions:
   # Questions
@@ -128,6 +130,17 @@ actions:
     '*':
       - "Good for you."
       - "Please, there isn't time."
+
+  agree:
+    '*':
+      - "Thanks."
+      - "Cool."
+      - "Alright."
+      - "Good."
+
+  hello:
+    '*':
+      - "Greetings."
 
   # Escaped
   CLARITY:

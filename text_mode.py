@@ -1,73 +1,42 @@
-
-import time
 import random
 import curses
 import threading
-import os
-import string
 
 random.seed('a')
 
 class Engine():
 
-  border = '#'
-
-  cursor = '█'
-
-  blink_time = 4000
-
-  def new_row(self, *args):
-    return [' ']*self.cols
-
-  def corr_row(self, row=-1, rate=.0001, *args):
-    return [rate]*self.cols
-
-  def new_cols(self, new_row_funct):
-    return [new_row_funct(r) for r in range(self.rows)]
+  colors = {}
+  colors['system'] = 8 # gray
 
   def __init__(self, stdscr):
     self.stdscr = stdscr
 
     self.log_file = open('.log.txt', 'w')
-    
-    curses.use_default_colors()
-    for i in range(0, curses.COLORS):
-      curses.init_pair(i, i, 0)
-    stdscr.bkgd(' ', curses.color_pair(1))
 
-      
-    
     curses.noecho()
     curses.curs_set(0)
     self.stdscr.nodelay(True)
 
-    self.buffer = ''
     self.update_count = 0
+    self.corr_default = 0
 
-    # Screen size of the Exidy Sorcerer (reversed?)
-    self.resize(64, 30)
+    self.resize(30, 30)
 
-  def log(self, *args):
-    s = ', '.join([str(e) for e in args])
-    s += '\n'
-    self.log_file.write(s)
+  # LIFECYCLE
+  def setup(self):
+    for key, val in self.colors.items():
+      self.colors[key] = curses.color_pair(val)
 
-  def resize(self, rows=-1, cols=-1):
-    self.rows, self.cols = self.stdscr.getmaxyx()
-    self.rows -= 1
-    self.cols -= 1
-    if 0 < rows and rows < self.rows:
-      self.rows = rows
-    if 0 < cols and rows < self.cols:
-      self.cols = cols
-
-    # Memory of the screen state (list comprehension creates deep copies)
-    self.matrix = self.new_cols(self.new_row)
-    self.corrupt_matrix = self.new_cols(self.corr_row)
-    self.log({self.rows}, {self.cols})
+    for i in range(0, curses.COLORS):
+      try:
+        curses.init_pair(i, i, 0)
+      except curses.error:
+        continue
 
   def run(self):
     self.running = True
+    self.setup()
     while self.running:
       self.update()
       self.render()
@@ -77,6 +46,7 @@ class Engine():
     curses.endwin()
     self.log_file.close()
 
+  # EACH CYCLE
   def update(self):
     self.update_count += 1
     c = self.stdscr.getch()
@@ -84,65 +54,102 @@ class Engine():
       self.running = False
     elif c == curses.KEY_RESIZE:
       self.resize()
-    elif c == curses.KEY_ENTER or c == 10:
-      self.from_bottom(self.buffer)
-      self.buffer = ''
-    elif c == curses.KEY_DC or c == 127:
-      self.clear_row()
-      self.buffer = self.buffer[:-1]
-    elif c > 0:
-      self.buffer += chr(c)
-      self.buffer = self.buffer[:self.cols-1]
+    self.key(c)
 
   def render(self):
-    self.write_to(self.rows-1, 0, self.buffer)
-    if self.update_count % self.blink_time*2 > self.blink_time:
-      self.write_to(self.rows-1, len(self.buffer), self.cursor)
-    else:
-      self.write_to(self.rows-1, len(self.buffer), ' ')
     for r in range(0, len(self.matrix)):
       for c in range(0, len(self.matrix[r])):
+        color = self.color_matrix[r][c]
         if random.random() < self.corrupt_matrix[r][c]:
-          letter = random.choice(string.printable)
-          self.stdscr.addch(r, c, letter)
+          letter = random.randint(32, 126)
+          self.stdscr.addch(r, c + self.offset, letter)
         else:
-          color = random.randint(0, curses.COLORS)
-          self.stdscr.addstr(r, c, self.matrix[r][c], curses.color_pair(color))
+          self.stdscr.addstr(r, c + self.offset, self.matrix[r][c], color)
 
-  def write_to(self, r=0, c=0, s=''):
+  # HIGH LEVEL / UTILITY
+  def key(self, c):
+    # Overwrite me
+    return
+
+  def log(self, *args, end='\n'):
+    s = ', '.join([str(e) for e in args])
+    s += end
+    self.log_file.write(s)
+
+  def write_to(self, r=-1, c=0, s='', corr=[], colors=[], color=-1):
     if not isinstance(s, str):
       s = str(s)
+
+    if r < 0:
+      r += self.rows
+
     for l in s:
       self.matrix[r][c] = l
+      if corr:
+        self.corrupt_matrix[r][c] = corr.pop(0)
+      if colors:
+        self.color_matrix[r][c] = colors.pop(0) 
+      elif color > 0:
+        self.color_matrix[r][c] = color
       c+=1
       if c >= self.cols: break
 
-  def from_bottom(self, s):
-    self.log(s)
-    self.clear_row()
-    self.write_to(self.rows-1, 0, s)
-    self.matrix.pop(0)
-    self.matrix.append(self.new_row(0))
-    self.corrupt_matrix.pop(0)
-    self.corrupt_matrix.append(self.corr_row())
+  def resize(self, rows=-1, cols=-1):
+    max_rows, max_cols = self.stdscr.getmaxyx()
+    max_cols -= 1
+   
+    self.rows = max_rows
+    if 0 < rows and rows < max_rows:
+      self.rows = rows
+    self.cols = max_cols
+    if 0 < cols and rows < max_cols:
+      self.cols = cols
 
+    self.offset = (max_cols - self.cols) // 2
+
+    # Memory of the screen state (list comprehension creates deep copies)
+    self.matrix = self.new_cols(self.new_row)
+    self.corrupt_matrix = self.new_cols(self.corr_row)
+    self.color_matrix = self.new_cols(self.color_row)
+    self.log(f'Resize: {self.rows}, {self.cols}')
+
+  # ROW MANAGEMENT
   def clear_row(self, r=-1):
     if r < 0: r = self.rows + r
     self.matrix[r] = self.new_row(r)
+    self.corrupt_matrix[r] = self.corr_row(r)
+    self.color_matrix[r] = self.color_row(r)
 
-    
-def create(stdscr):
-  eng = Engine(stdscr)
-  eng.run()
+  def new_row(self, *args):
+    return [' ']*self.cols
+
+  def corr_row(self, row=-1, rate=-1, *args):
+    if rate < 0:
+      rate = self.corr_default
+    return [rate]*self.cols
+
+  def color_row(self, row=-1, color=-1, *args):
+    if color < 0:
+      color = self.colors['system']
+    return [color]*self.cols
+
+  def new_cols(self, new_row_funct):
+    return [new_row_funct(r) for r in range(self.rows)]
+
+# CREATE & START
+def create(EngType):
+  def _create(stdscr):
+    eng = EngType(stdscr)
+    eng.run()
+  curses.wrapper(_create)
+
+def start(EngType=Engine, threaded=False):
+  if threaded:
+    thr = threading.Thread(target=create, args=(EngType,))
+    thr.daemon = True
+    thr.start()
+  else:
+    create(EngType)
 
 if __name__ == '__main__':
-  curses.wrapper(create)
-  
-def start():
-  eng = curses.wrapper(create)
-
-  thr = threading.Thread(target=eng.run)
-  thr.daemon = True
-  thr.start()
-
-  return eng
+  start()

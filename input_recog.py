@@ -9,7 +9,11 @@ class Recog:
     pp.pprint(self.actions)
     pp.pprint(self.word_group)
 
-  def respond(self, action, subject):
+  def respond(self, input):
+    act, sub = self.classify(input)
+    return self.retrieve(act, sub)
+
+  def retrieve(self, action, subject):
     responces = self.actions[action][subject]
     if len(responces) > 1:
       res = responces.pop(0)
@@ -82,6 +86,8 @@ def main():
     "What time is it?",
     "I should kill you.",
     "What do I need to do next?",
+    "How can I help you?",
+    "How do I help you?",
     "How do I shut you down?",
     "Tell me what I need to do",
     "Why should I",
@@ -94,12 +100,17 @@ def main():
     "My name is bob",
     "Fuck you",
     "Fuck you",
-    "Fuck off"
+    "Fuck off",
+    "mmk",
+    "ok",
+    "Hey there friend",
+    "Hello",
+    "Whats up?"
   ]
   recog = Recog()
   for e in examples:
     act, sub = recog.classify(e)
-    res = recog.respond(act, sub)
+    res = recog.retrieve(act, sub)
     print(f'\t {e} = \t {act}, {sub} = \t {res}')
 
 
